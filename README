@@ -1,0 +1,11 @@
+Simple MODx resource password protection
+
+=======
+INSTALL
+=======
+
+cp _build/build.config-sample.php _build/build.config.php
+
+Edit MODX_BASE_PATH to point to your MODx install path
+
+Run the build script from the web browser
