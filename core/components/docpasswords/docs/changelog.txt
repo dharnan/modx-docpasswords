@@ -1,0 +1,6 @@
+Changelog file for Docpasswords component.
+
+Docpasswords 1.0
+====================================
+- First Release Candidate
+
