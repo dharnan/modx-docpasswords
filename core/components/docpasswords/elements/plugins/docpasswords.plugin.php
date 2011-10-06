@@ -129,10 +129,6 @@ switch ($modx->event->name) {
                     $docPWObj->remove();
                 }
             }
-            // refresh the web context_settings partitions
-            $modx->cacheManager->refresh(array(
-                'context_settings' => array('contexts' => array('web'))
-            ));
         }
 
         break;
@@ -169,6 +165,7 @@ switch ($modx->event->name) {
         ));
 
         if (null !== $docPWObj) { //a password exists for this web page
+
             $modx->smarty->setTemplatePath($docPasswords->config['smartyPath']);
 
             $isFormError = false;
@@ -179,7 +176,6 @@ switch ($modx->event->name) {
                 if (isset($_POST) && array_key_exists('dPassword', $_POST)
                     && array_key_exists('dSubmit', $_POST)) { //form submitted
                         $formPass = $_POST['dPassword'];
-
                         if ($formPass == $dbPass) {
                             $docPasswords->setSession($docId, $formPass);
                             break;
@@ -197,10 +193,24 @@ switch ($modx->event->name) {
                 }
 
                 //password form html
-                $content = $modx->smarty->fetch('webPasswordForm.smarty.tpl');
-                $resource = $modx->resource;
+                $loginForm = $modx->smarty->fetch('webPasswordForm.smarty.tpl');
 
-                $resource->_output = str_replace($resource->content, $content, $resource->_output);
+                // get the resource final output and unprocessed content
+                $output = &$modx->resource->_output;
+                $content = &$modx->resource->getContent();
+
+                //process all resource content tags
+                //XXX: See modResponse->outputContent() for e.g.
+                $modx->getParser();
+                $maxIterations = 10;
+                $modx->parser->processElementTags('', $content, true, false, '[[', ']]', array(), $maxIterations);
+                $modx->parser->processElementTags('', $content, true, true, '[[', ']]', array(), $maxIterations);
+
+                //sub in the loginForm for the content
+                $output = str_replace($content, $loginForm, &$output);
+
+                $resourceCache = $modx->cacheManager->getCacheProvider($modx->getOption('cache_resource_key', null, 'resource'));
+                $resourceCache->delete($modx->resource);
 
                 //reset the smarty template path for MODx
                 $modx->smarty->setTemplatePath($modx->getOption('manager_path') . 'templates/default');
