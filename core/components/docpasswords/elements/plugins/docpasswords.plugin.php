@@ -3,8 +3,15 @@
 /**
  * DocPassword Plugin
  *
- * Events: OnDocFormPrerender, OnDocFormRender, OnDocFormSave, OnDocFormDelete
- *  OnWebPageInit, OnWebPagePrerender, OnWebPageComplete
+ * Manager Events:
+ * OnDocFormRender
+ * OnDocFormSave
+ * OnDocFormDelete
+ *
+ * Public Events:
+ * OnWebPageInit
+ * OnWebPagePrerender
+ * OnWebPageComplete
  *
  * @author     Arietis Software <code@arietis-software.com>
  * @copyright  Copyright (c) 2011 Arietis Software Innovations
@@ -122,10 +129,10 @@ switch ($modx->event->name) {
                     $docPWObj->remove();
                 }
             }
-            //finally make the doc resource uncacheable
-            $modx->db->update(array('cacheable' => 0),
-                              $modx->getFullTablename('site_content'),
-                              'id=' . $docId);
+            // refresh the web context_settings partitions
+            $modx->cacheManager->refresh(array(
+                'context_settings' => array('contexts' => array('web'))
+            ));
         }
 
         break;
@@ -171,16 +178,15 @@ switch ($modx->event->name) {
             if (isset($dbPass) && !$docPasswords->isValidSession($docId, $dbPass)) { //no stored password
                 if (isset($_POST) && array_key_exists('dPassword', $_POST)
                     && array_key_exists('dSubmit', $_POST)) { //form submitted
+                        $formPass = $_POST['dPassword'];
 
-                    $formPass = $_POST['dPassword'];
-
-                    if ($formPass == $dbPass) {
-                        $docPasswords->setSession($docId, $formPass);
-                        break;
-                    } else {
-                        $isFormError = true;
+                        if ($formPass == $dbPass) {
+                            $docPasswords->setSession($docId, $formPass);
+                            break;
+                        } else {
+                            $isFormError = true;
+                        }
                     }
-                }
 
                 //display incorrect pw message if wrong
                 $modx->smarty->assign('style', 'display:none');
